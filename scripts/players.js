@@ -39,12 +39,12 @@ window.players = {
         for (const serverName of serverNames) {
             try {
                 const data = await window.requests.get(serverName, 'players.json');
-                console.log(data);
+                console.log(`Data from ${serverName}:`, data); // Выводим данные в консоль
                 if (data) {
                     players.rows.rows[serverName] = data;
-                    window.logssystem.log(`getUsers ${serverName}`);
+                    window.logssystem.log(`Данные пользователей успешно получены для сервера ${serverName}`);
                 } else {
-                    window.logssystem.error(`getUsers функция не смогла загрузить данные пользователей с сервера ${serverName}`);
+                    window.logssystem.error(`Не удалось загрузить данные пользователей с сервера ${serverName}`);
                 }
             } catch (error) {
                 window.logssystem.error(`Произошла ошибка при получении данных пользователей для сервера ${serverName}: ${error}`);
@@ -84,13 +84,12 @@ window.players = {
                 const negativeBalanceUsers = data.filter(user => user.coins < 0);
                 window.logssystem.log(`Пользователи с отрицательным балансом на сервере ${serverName}:`, negativeBalanceUsers);
 
-                // Установите баланс в 0 для пользователей с отрицательным балансом
                 negativeBalanceUsers.forEach(user => {
                     user.coins = 0;
+
                 });
 
-                // Теперь можно обновить данные о пользователях на сервере, если это необходимо
-                // Для этого используйте players.rows.updateRow или другую подходящую функцию.
+                window.logssystem.log(`Баланс установлен в 0 для пользователей с отрицательным балансом на сервере ${serverName}`);
             } else {
                 window.logssystem.error(`Данные о пользователях не найдены для сервера ${serverName}`);
             }
