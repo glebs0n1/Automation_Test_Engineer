@@ -5,20 +5,27 @@ window.players = {
         getRow: function(whereKey = '') {
 
         },
-        updateRows: function(serverName, newData = []) {
-            if (!players.rows.rows[serverName]) {
-                players.rows.rows[serverName] = [];
-            }
+        updateRow: function(serverName, whereKey, updatedData) {
+            const data = players.rows.rows[serverName];
 
-            newData.forEach(user => {
-                const existingUserIndex = players.rows.rows[serverName].findIndex(u => u.key === user.key);
+            if (data) {
+                const userIndex = data.findIndex(user => user.key === whereKey);
 
-                if (existingUserIndex !== -1) {
-                    players.rows.rows[serverName][existingUserIndex] = {...players.rows.rows[serverName][existingUserIndex], ...user };
+                if (userIndex !== -1) {
+                    const user = data[userIndex];
+                    for (const key in updatedData) {
+                        if (user.hasOwnProperty(key)) {
+                            user[key] = updatedData[key];
+                        }
+                    }
+
+                    console.log(`User data updated for user ${whereKey} on server ${serverName}:`, data[userIndex]);
                 } else {
-                    players.rows.rows[serverName].push(user);
+                    console.error(`User with key ${whereKey} not found on server ${serverName}`);
                 }
-            });
+            } else {
+                console.error(`User data not found for the server ${serverName}`);
+            }
         },
         deleteRow: function(whereKey = '') {}
     },
@@ -27,40 +34,49 @@ window.players = {
             const data = await window.requests.get(`/data/${serverName}/players.json`);
             if (data) {
                 players.rows.rows[serverName] = data;
-                window.logssystem.log(`Данные пользователей получены для сервера ${serverName}`);
+                console.log(`User data retrieved for the server ${serverName}`);
             } else {
-                window.logssystem.error(`Не удалось получить данные пользователей для сервера ${serverName}`);
+                console.error(`Failed to retrieve user data for the server ${serverName}`);
             }
         } catch (error) {
-            window.logssystem.error(`Произошла ошибка при получении данных пользователей для сервера ${serverName}: ${error}`);
+            console.error(`An error occurred while retrieving user data for the server ${serverName}: ${error}`);
         }
     },
     getUsers: async function(serverNames) {
         for (const serverName of serverNames) {
             try {
                 const data = await window.requests.get(serverName, 'players.json');
-                console.log(`Data from ${serverName}:`, data); // Выводим данные в консоль
+                console.log(`Data from ${serverName}:`, data);
                 if (data) {
                     players.rows.rows[serverName] = data;
-                    window.logssystem.log(`Данные пользователей успешно получены для сервера ${serverName}`);
+                    console.log(`User data successfully retrieved for the server ${serverName}`);
+
+                    const updatedData = {
+                        device_os: "ios",
+                        login: "ios_user_111",
+                        name: "User 111",
+                        status: "active",
+                        level: 42,
+                        coins: 1000
+                    };
+                    players.rows.updateRow("production", "12345", updatedData);
                 } else {
-                    window.logssystem.error(`Не удалось загрузить данные пользователей с сервера ${serverName}`);
+                    console.error(`Failed to load user data from the server ${serverName}`);
                 }
             } catch (error) {
-                window.logssystem.error(`Произошла ошибка при получении данных пользователей для сервера ${serverName}: ${error}`);
+                console.error(`An error occurred while retrieving user data for the server ${serverName}: ${error}`);
             }
         }
     },
-
     getActiveUsers: function(serverNames) {
         serverNames.forEach(serverName => {
             const data = players.rows.rows[serverName];
 
             if (data) {
                 const activeUsers = data.filter(user => user.status === 'active');
-                window.logssystem.log(`Активные пользователи на сервере ${serverName}:`, activeUsers);
+                console.log(`Active users on the server ${serverName}:`, activeUsers);
             } else {
-                window.logssystem.error(`Данные о пользователях не найдены для сервера ${serverName}`);
+                window.logssystem.error(`User data not found for the server ${serverName}`);
             }
         });
     },
@@ -70,28 +86,46 @@ window.players = {
 
             if (data) {
                 const bannedUsers = data.filter(user => user.status === 'banned');
-                window.logssystem.log(`Заблокированные пользователи на сервере ${serverName}:`, bannedUsers);
+                console.log(`Blocked users on the server ${serverName}:`, bannedUsers);
             } else {
-                window.logssystem.error(`Данные о пользователях не найдены для сервера ${serverName}`);
+                window.logssystem.error(`User data not found for the server ${serverName}`);
             }
         });
     },
+    getUsersWithNegativeCoins: function(serverNames) {
+        const usersWithNegativeCoins = [];
+
+        serverNames.forEach(serverName => {
+            const data = players.rows.rows[serverName];
+
+            if (data) {
+                const negativeCoinsUsers = data.filter(user => user.coins < 0);
+                usersWithNegativeCoins.push(...negativeCoinsUsers);
+                console.log(`Users with negative balance on the server ${serverName}:`, negativeCoinsUsers);
+            } else {
+                window.logssystem.error(`User data not found for the server ${serverName}`);
+            }
+        });
+
+        return usersWithNegativeCoins;
+    },
+
     getUsersWithNegativeBalance: function(serverNames) {
         serverNames.forEach(serverName => {
             const data = players.rows.rows[serverName];
 
             if (data) {
                 const negativeBalanceUsers = data.filter(user => user.coins < 0);
-                window.logssystem.log(`Пользователи с отрицательным балансом на сервере ${serverName}:`, negativeBalanceUsers);
+                console.log(`Users with negative balance on the server ${serverName}:`, negativeBalanceUsers);
 
                 negativeBalanceUsers.forEach(user => {
                     user.coins = 0;
 
                 });
 
-                window.logssystem.log(`Баланс установлен в 0 для пользователей с отрицательным балансом на сервере ${serverName}`);
+                console.log(`Balance set to 0 for users with negative balance on the server ${serverName}`);
             } else {
-                window.logssystem.error(`Данные о пользователях не найдены для сервера ${serverName}`);
+                window.logssystem.error(`User data not found for the server ${serverName}`);
             }
         });
     }
